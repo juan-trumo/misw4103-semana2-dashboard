@@ -64,6 +64,38 @@ function count(arr, key) {
   return Object.entries(m).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
 }
 
+const PROPORCION_SHORT = {
+  "100% Manuales":    "Totalmente Manuales",
+  "70% Manual":       "Mayormente Manuales",
+  "Equilibrado":      "Equilibrado",
+  "70% Automatizado": "Mayormente Automatizadas",
+  "100% Automatizado":"Totalmente Automatizadas",
+};
+
+const PROPORCION_FULL = {
+  "100% Manuales":    "Totalmente Manuales (100% Pruebas Manuales, 0% Pruebas Automatizadas)",
+  "70% Manual":       "Mayormente Manuales (Aprox. 70% Manuales, 30% Automatizadas)",
+  "Equilibrado":      "Equilibrado (Aprox. 50% Manuales, 50% Automatizadas)",
+  "70% Automatizado": "Mayormente Automatizadas (Aprox. 70% Automatizadas, 30% Manuales)",
+  "100% Automatizado":"Totalmente Automatizadas (100% Pruebas Automatizadas, 0% Pruebas Manuales)",
+};
+
+const PROP_ORDER = [
+  "Totalmente Manuales",
+  "Mayormente Manuales",
+  "Equilibrado",
+  "Mayormente Automatizadas",
+  "Totalmente Automatizadas",
+];
+
+const PROP_COLORS = {
+  "Totalmente Manuales":      "#ef4444",
+  "Mayormente Manuales":      "#f97316",
+  "Equilibrado":              "#eab308",
+  "Mayormente Automatizadas": "#22c55e",
+  "Totalmente Automatizadas": "#2563eb",
+};
+
 const FACTOR_LABELS = {
   "Costo": "Costo de implementación y mantenimiento",
   "Velocidad": "Velocidad de ejecución de las pruebas",
@@ -80,13 +112,18 @@ function countTeamCountries(arr) {
     d.equipos.split(",").forEach(c => {
       const country = c.trim();
       if (country) {
-        if (!m[country]) m[country] = { Pirámide: 0, Cono: 0 };
-        m[country][d.estrategia] = (m[country][d.estrategia] || 0) + 1;
+        if (!m[country]) m[country] = {};
+        const prop = PROPORCION_SHORT[d.proporcion] || d.proporcion;
+        m[country][prop] = (m[country][prop] || 0) + 1;
       }
     });
   });
   return Object.entries(m)
-    .map(([name, counts]) => ({ name, Pirámide: counts.Pirámide || 0, Cono: counts.Cono || 0, total: (counts.Pirámide || 0) + (counts.Cono || 0) }))
+    .map(([name, counts]) => ({
+      name,
+      ...counts,
+      total: Object.values(counts).reduce((s, v) => s + v, 0),
+    }))
     .sort((a, b) => b.total - a.total);
 }
 
@@ -151,7 +188,7 @@ export default function Dashboard() {
   }, [filterExp, filterMod, filterStrat, filterPais]);
 
   const stratData = count(filtered, "estrategia");
-  const propData = count(filtered, "proporcion");
+  const propData = count(filtered, "proporcion").map(d => ({ ...d, name: PROPORCION_SHORT[d.name] || d.name }));
   const expData = count(filtered, "experiencia");
   const modData = count(filtered, "modalidad");
   const paisData = count(filtered, "pais");
@@ -348,9 +385,9 @@ export default function Dashboard() {
 
       {/* Cross-analysis: Team Countries */}
       <div style={{ background: COLORS.card, borderRadius: 10, padding: 16, border: `1px solid ${COLORS.border}`, marginBottom: 20 }}>
-        <h3 style={{ color: COLORS.text, fontSize: 14, fontWeight: 600, marginBottom: 4 }}>Correlación: País en el Equipo × Estrategia Preferida</h3>
+        <h3 style={{ color: COLORS.text, fontSize: 14, fontWeight: 600, marginBottom: 4 }}>Correlación: País en el Equipo × Proporción de Pruebas</h3>
         <p style={{ color: COLORS.textMuted, fontSize: 11, marginBottom: 12, marginTop: 0 }}>
-          Cada barra muestra cuántos participantes que trabajan con personas de ese país eligieron cada estrategia.
+          Cada barra muestra la distribución de proporción de pruebas entre participantes que trabajan con personas de ese país.
         </p>
         <ResponsiveContainer width="100%" height={Math.max(220, teamCountryData.length * 32)}>
           <BarChart data={teamCountryData} layout="vertical" margin={{ left: 10, right: 30 }}>
@@ -358,11 +395,12 @@ export default function Dashboard() {
             <YAxis type="category" dataKey="name" width={120} tick={{ fill: COLORS.textMuted, fontSize: 11 }} axisLine={false} tickLine={false} />
             <Tooltip
               contentStyle={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 8, color: COLORS.text, fontSize: 12 }}
-              formatter={(value, name) => [`${value} participantes`, name]}
+              formatter={(value, name) => [`${value} participantes`, PROPORCION_FULL[Object.keys(PROPORCION_SHORT).find(k => PROPORCION_SHORT[k] === name)] || name]}
             />
             <Legend wrapperStyle={{ fontSize: 11, color: COLORS.textMuted }} />
-            <Bar dataKey="Pirámide" fill={COLORS.piramide} radius={[0, 4, 4, 0]} barSize={12} />
-            <Bar dataKey="Cono" fill={COLORS.cono} radius={[0, 4, 4, 0]} barSize={12} />
+            {PROP_ORDER.filter(p => teamCountryData.some(d => d[p])).map(p => (
+              <Bar key={p} dataKey={p} stackId="a" fill={PROP_COLORS[p]} barSize={14} />
+            ))}
           </BarChart>
         </ResponsiveContainer>
       </div>
