@@ -326,23 +326,24 @@ export default function Dashboard() {
         </ResponsiveContainer>
       </div>
 
-      {/* Cross-analysis: Strategy by Experience */}
+      {/* Cross-analysis: Proportion by Experience */}
       <div style={{ background: COLORS.card, borderRadius: 10, padding: 16, border: `1px solid ${COLORS.border}`, marginBottom: 20 }}>
-        <h3 style={{ color: COLORS.text, fontSize: 14, fontWeight: 600, marginBottom: 12 }}>Correlación: Estrategia × Experiencia</h3>
+        <h3 style={{ color: COLORS.text, fontSize: 14, fontWeight: 600, marginBottom: 12 }}>Correlación: Proporción de Pruebas × Experiencia</h3>
         <ResponsiveContainer width="100%" height={250}>
           <BarChart data={(() => {
             const expOrder = ["1 a 3 años", "4 a 6 años", "7 a 10 años", "11 a 15 años", "Más de 20 años"];
             return expOrder.map(exp => {
               const sub = filtered.filter(d => d.experiencia === exp);
-              return { name: exp, Pirámide: sub.filter(d => d.estrategia === "Pirámide").length, Cono: sub.filter(d => d.estrategia === "Cono").length };
-            }).filter(d => d.Pirámide + d.Cono > 0);
+              const obj = { name: exp };
+              PROP_ORDER.forEach(p => { obj[p] = sub.filter(d => (PROPORCION_SHORT[d.proporcion] || d.proporcion) === p).length; });
+              return obj;
+            }).filter(d => PROP_ORDER.some(p => d[p] > 0));
           })()} margin={{ left: 0, right: 10 }}>
             <XAxis dataKey="name" tick={{ fill: COLORS.textMuted, fontSize: 10 }} axisLine={false} tickLine={false} />
             <YAxis tick={{ fill: COLORS.textMuted, fontSize: 11 }} axisLine={false} tickLine={false} />
             <Tooltip contentStyle={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 8, color: COLORS.text, fontSize: 12 }} />
             <Legend wrapperStyle={{ fontSize: 11, color: COLORS.textMuted }} />
-            <Bar dataKey="Pirámide" fill={COLORS.piramide} radius={[4, 4, 0, 0]} barSize={28} />
-            <Bar dataKey="Cono" fill={COLORS.cono} radius={[4, 4, 0, 0]} barSize={28} />
+            {PROP_ORDER.map(p => <Bar key={p} dataKey={p} stackId="a" fill={PROP_COLORS[p]} barSize={32} />)}
           </BarChart>
         </ResponsiveContainer>
       </div>
@@ -350,18 +351,19 @@ export default function Dashboard() {
       {/* Cross-analysis: Strategy by Modality */}
       <div style={{ display: "flex", gap: 16, marginBottom: 20, flexWrap: "wrap" }}>
         <div style={{ flex: 1, minWidth: 280, background: COLORS.card, borderRadius: 10, padding: 16, border: `1px solid ${COLORS.border}` }}>
-          <h3 style={{ color: COLORS.text, fontSize: 14, fontWeight: 600, marginBottom: 12 }}>Correlación: Estrategia × Modalidad</h3>
+          <h3 style={{ color: COLORS.text, fontSize: 14, fontWeight: 600, marginBottom: 12 }}>Correlación: Proporción de Pruebas × Modalidad</h3>
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={["Híbrido", "Remoto"].map(mod => {
               const sub = filtered.filter(d => d.modalidad === mod);
-              return { name: mod, Pirámide: sub.filter(d => d.estrategia === "Pirámide").length, Cono: sub.filter(d => d.estrategia === "Cono").length };
+              const obj = { name: mod };
+              PROP_ORDER.forEach(p => { obj[p] = sub.filter(d => (PROPORCION_SHORT[d.proporcion] || d.proporcion) === p).length; });
+              return obj;
             })} margin={{ left: 0, right: 10 }}>
               <XAxis dataKey="name" tick={{ fill: COLORS.textMuted, fontSize: 11 }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fill: COLORS.textMuted, fontSize: 11 }} axisLine={false} tickLine={false} />
               <Tooltip contentStyle={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 8, color: COLORS.text, fontSize: 12 }} />
               <Legend wrapperStyle={{ fontSize: 11 }} />
-              <Bar dataKey="Pirámide" fill={COLORS.piramide} radius={[4, 4, 0, 0]} barSize={32} />
-              <Bar dataKey="Cono" fill={COLORS.cono} radius={[4, 4, 0, 0]} barSize={32} />
+              {PROP_ORDER.map(p => <Bar key={p} dataKey={p} stackId="a" fill={PROP_COLORS[p]} barSize={40} />)}
             </BarChart>
           </ResponsiveContainer>
         </div>
