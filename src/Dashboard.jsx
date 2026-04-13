@@ -64,6 +64,16 @@ function count(arr, key) {
   return Object.entries(m).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
 }
 
+const FACTOR_LABELS = {
+  "Costo": "Costo de implementación y mantenimiento",
+  "Velocidad": "Velocidad de ejecución de las pruebas",
+  "Confiabilidad": "Confiabilidad y estabilidad de las pruebas",
+  "Facilidad": "Facilidad de implementación en el equipo",
+  "Cobertura": "Cobertura de escenarios del usuario final",
+  "Tipo de proyecto": "Tipo de proyecto o arquitectura del sistema",
+  "Experiencia previa": "Experiencia previa del equipo",
+};
+
 function countTeamCountries(arr) {
   const m = {};
   arr.forEach(d => {
@@ -85,7 +95,10 @@ function countFactors(arr) {
   arr.forEach(d => {
     d.factores.split(",").forEach(f => {
       const k = f.trim();
-      if (k) m[k] = (m[k] || 0) + 1;
+      if (k) {
+        const label = FACTOR_LABELS[k] || k;
+        m[label] = (m[label] || 0) + 1;
+      }
     });
   });
   return Object.entries(m).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
@@ -269,7 +282,7 @@ export default function Dashboard() {
         <ResponsiveContainer width="100%" height={Math.max(200, factorData.length * 36)}>
           <BarChart data={factorData} layout="vertical" margin={{ left: 10, right: 20 }}>
             <XAxis type="number" tick={{ fill: COLORS.textMuted, fontSize: 11 }} axisLine={false} tickLine={false} />
-            <YAxis type="category" dataKey="name" width={180} tick={{ fill: COLORS.textMuted, fontSize: 11 }} axisLine={false} tickLine={false} />
+            <YAxis type="category" dataKey="name" width={280} tick={{ fill: COLORS.textMuted, fontSize: 11 }} axisLine={false} tickLine={false} />
             <Tooltip contentStyle={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 8, color: COLORS.text, fontSize: 12 }} />
             <Bar dataKey="value" fill={COLORS.accent} radius={[0, 4, 4, 0]} barSize={20} />
           </BarChart>
