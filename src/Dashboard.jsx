@@ -35,6 +35,13 @@ const DATA = [
   { pais: "Colombia", equipos: "Colombia", experiencia: "1 a 3 años", modalidad: "Híbrido", proporcion: "100% Manuales", estrategia: "Pirámide", justificacion: "Mayor cobertura con pruebas unitarias desde el inicio identifica errores temprano", factores: "Detección temprana" },
 ];
 
+const TEAM = [
+  "Diego Felipe Montoya",
+  "Juan Diego Trujillo",
+  "Juan Pablo Jerez",
+  "Jerónimo Pineda",
+];
+
 const COLORS = {
   piramide: "#2563eb",
   cono: "#f59e0b",
@@ -55,6 +62,22 @@ function count(arr, key) {
   const m = {};
   arr.forEach(d => { m[d[key]] = (m[d[key]] || 0) + 1; });
   return Object.entries(m).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
+}
+
+function countTeamCountries(arr) {
+  const m = {};
+  arr.forEach(d => {
+    d.equipos.split(",").forEach(c => {
+      const country = c.trim();
+      if (country) {
+        if (!m[country]) m[country] = { Pirámide: 0, Cono: 0 };
+        m[country][d.estrategia] = (m[country][d.estrategia] || 0) + 1;
+      }
+    });
+  });
+  return Object.entries(m)
+    .map(([name, counts]) => ({ name, Pirámide: counts.Pirámide || 0, Cono: counts.Cono || 0, total: (counts.Pirámide || 0) + (counts.Cono || 0) }))
+    .sort((a, b) => b.total - a.total);
 }
 
 function countFactors(arr) {
@@ -120,6 +143,7 @@ export default function Dashboard() {
   const modData = count(filtered, "modalidad");
   const paisData = count(filtered, "pais");
   const factorData = countFactors(filtered);
+  const teamCountryData = countTeamCountries(filtered);
 
   const activeFilters = [filterExp, filterMod, filterStrat, filterPais].filter(f => f !== "Todos").length;
 
@@ -141,12 +165,23 @@ export default function Dashboard() {
     <div style={{ background: COLORS.bg, minHeight: "100vh", padding: "24px 20px", fontFamily: "'Segoe UI', system-ui, sans-serif" }}>
       {/* Header */}
       <div style={{ textAlign: "center", marginBottom: 28 }}>
-        <h1 style={{ color: COLORS.text, fontSize: 22, fontWeight: 700, margin: 0, letterSpacing: -0.5 }}>
-          Análisis Cuantitativo — Estrategias de Automatización
+        <div style={{ fontSize: 11, color: COLORS.accent, fontWeight: 600, letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 8 }}>
+          Universidad de Los Andes · MISW4103 · Semana 2
+        </div>
+        <h1 style={{ color: COLORS.text, fontSize: 24, fontWeight: 700, margin: 0, letterSpacing: -0.5 }}>
+          Análisis Cuantitativo
         </h1>
-        <p style={{ color: COLORS.textMuted, fontSize: 13, marginTop: 6 }}>
-          Encuesta a {DATA.length} profesionales · Semana 2 · Proyecto Pruebas Automatizadas
+        <p style={{ color: COLORS.textMuted, fontSize: 14, marginTop: 4, marginBottom: 16 }}>
+          Estrategias de Automatización de Pruebas · {DATA.length} profesionales encuestados
         </p>
+        <div style={{ display: "inline-flex", flexWrap: "wrap", gap: 8, justifyContent: "center", background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 10, padding: "10px 18px" }}>
+          <span style={{ fontSize: 11, color: COLORS.textMuted, marginRight: 4, alignSelf: "center", fontWeight: 600 }}>Equipo:</span>
+          {TEAM.map((name, i) => (
+            <span key={i} style={{ fontSize: 12, color: COLORS.text, background: COLORS.bg, border: `1px solid ${COLORS.border}`, borderRadius: 20, padding: "3px 10px" }}>
+              {name}
+            </span>
+          ))}
+        </div>
       </div>
 
       {/* Filters */}
@@ -298,6 +333,27 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* Cross-analysis: Team Countries */}
+      <div style={{ background: COLORS.card, borderRadius: 10, padding: 16, border: `1px solid ${COLORS.border}`, marginBottom: 20 }}>
+        <h3 style={{ color: COLORS.text, fontSize: 14, fontWeight: 600, marginBottom: 4 }}>Correlación: País en el Equipo × Estrategia Preferida</h3>
+        <p style={{ color: COLORS.textMuted, fontSize: 11, marginBottom: 12, marginTop: 0 }}>
+          Cada barra muestra cuántos participantes que trabajan con personas de ese país eligieron cada estrategia.
+        </p>
+        <ResponsiveContainer width="100%" height={Math.max(220, teamCountryData.length * 32)}>
+          <BarChart data={teamCountryData} layout="vertical" margin={{ left: 10, right: 30 }}>
+            <XAxis type="number" tick={{ fill: COLORS.textMuted, fontSize: 11 }} axisLine={false} tickLine={false} />
+            <YAxis type="category" dataKey="name" width={120} tick={{ fill: COLORS.textMuted, fontSize: 11 }} axisLine={false} tickLine={false} />
+            <Tooltip
+              contentStyle={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 8, color: COLORS.text, fontSize: 12 }}
+              formatter={(value, name) => [`${value} participantes`, name]}
+            />
+            <Legend wrapperStyle={{ fontSize: 11, color: COLORS.textMuted }} />
+            <Bar dataKey="Pirámide" fill={COLORS.piramide} radius={[0, 4, 4, 0]} barSize={12} />
+            <Bar dataKey="Cono" fill={COLORS.cono} radius={[0, 4, 4, 0]} barSize={12} />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+
       {/* Justifications Table */}
       <div style={{ background: COLORS.card, borderRadius: 10, padding: 16, border: `1px solid ${COLORS.border}` }}>
         <h3 style={{ color: COLORS.text, fontSize: 14, fontWeight: 600, marginBottom: 12 }}>
@@ -333,7 +389,7 @@ export default function Dashboard() {
       </div>
 
       <div style={{ textAlign: "center", marginTop: 20, color: COLORS.textMuted, fontSize: 11 }}>
-        Universidad de Los Andes · Proyecto Pruebas Automatizadas · Abril 2026
+        Universidad de Los Andes · MISW4103 · Semana 2 · Abril 2026 · {TEAM.join(" · ")}
       </div>
     </div>
   );
